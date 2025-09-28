@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build snapshot card
+      - name: Build assets/repo-snapshot.svg
         id: build
         uses: actions/github-script@v7
         with:
@@ -32,123 +32,69 @@ jobs:
 
             const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
             const first = s => String(s || '').split('\n')[0].trim();
-            const safe = s => (/(token|secret|password|key|auth|bearer|cookie|apikey|jwt|refresh)/i.test(first(s)) ? '(redacted)' : first(s).slice(0, 120));
-            const ago = iso => {
-              if (!iso) return 'n/a';
-              const ms = Date.now() - new Date(iso).getTime();
-              const m = Math.floor(ms/60000), h = Math.floor(m/60), d = Math.floor(h/24);
-              if (d >= 1) return `${d}d ago`;
-              if (h >= 1) return `${h}h ${m%60}m ago`;
-              return `${Math.max(m,0)}m ago`;
-            };
+            const safe = s => (/(token|secret|password|key|auth|bearer|cookie|apikey|jwt|refresh)/i.test(first(s)) ? '(redacted)' : first(s).slice(0,120));
+            const ago = iso => { if(!iso) return 'n/a'; const ms=Date.now()-new Date(iso).getTime(); const m=Math.floor(ms/60000),h=Math.floor(m/60),d=Math.floor(h/24); if(d>=1)return `${d}d ago`; if(h>=1)return `${h}h ${m%60}m ago`; return `${Math.max(m,0)}m ago`; };
 
             const info = await github.rest.repos.get({ owner, repo });
             const branch = info.data.default_branch;
 
-            const commits = await github.rest.repos.listCommits({ owner, repo, sha: branch, per_page: 1 });
-            const c0 = commits.data[0];
-            const commit = c0 ? {
-              type: 'Commit',
-              title: safe(c0.commit.message || ''),
-              url: c0.html_url,
-              by: c0.author?.login || c0.commit.author?.name || 'unknown',
-              date: c0.commit.author?.date || c0.commit.committer?.date || null,
-              extra: c0.sha.slice(0,7)
-            } : null;
+            const cRes = await github.rest.repos.listCommits({ owner, repo, sha: branch, per_page: 1 });
+            const c0 = cRes.data[0];
+            const commit = c0 ? { type:'Commit', title:safe(c0.commit.message||''), url:c0.html_url, by:c0.author?.login||c0.commit.author?.name||'unknown', date:c0.commit.author?.date||c0.commit.committer?.date||null, extra:c0.sha.slice(0,7) } : null;
 
-            const issues = await github.rest.issues.listForRepo({ owner, repo, state: 'all', per_page: 30, sort: 'updated', direction: 'desc' });
-            const i0 = issues.data.find(x => !x.pull_request);
-            const issue = i0 ? {
-              type: 'Issue',
-              title: i0.title,
-              url: i0.html_url,
-              by: i0.user?.login || 'unknown',
-              date: i0.updated_at,
-              extra: `#${i0.number} • ${i0.state}`
-            } : null;
+            const iRes = await github.rest.issues.listForRepo({ owner, repo, state:'all', per_page:30, sort:'updated', direction:'desc' });
+            const i0 = iRes.data.find(x=>!x.pull_request);
+            const issue = i0 ? { type:'Issue', title:i0.title, url:i0.html_url, by:i0.user?.login||'unknown', date:i0.updated_at, extra:`#${i0.number} • ${i0.state}` } : null;
 
-            const pulls = await github.rest.pulls.list({ owner, repo, state: 'all', per_page: 30 });
-            pulls.data.sort((a,b)=> new Date(b.updated_at) - new Date(a.updated_at));
-            const p0 = pulls.data[0];
-            const pr = p0 ? {
-              type: 'Pull Request',
-              title: p0.title,
-              url: p0.html_url,
-              by: p0.user?.login || 'unknown',
-              date: p0.updated_at,
-              extra: `#${p0.number} • ${p0.merged_at ? 'merged' : p0.state}`
-            } : null;
+            const pRes = await github.rest.pulls.list({ owner, repo, state:'all', per_page:30 });
+            pRes.data.sort((a,b)=> new Date(b.updated_at)-new Date(a.updated_at));
+            const p0 = pRes.data[0];
+            const pr = p0 ? { type:'Pull Request', title:p0.title, url:p0.html_url, by:p0.user?.login||'unknown', date:p0.updated_at, extra:`#${p0.number} • ${p0.merged_at?'merged':p0.state}` } : null;
 
             const items = [commit, issue, pr].filter(Boolean);
             const newest = items.length ? items.slice().sort((a,b)=> new Date(b.date)-new Date(a.date))[0] : null;
 
-            const width=900, pad=20, headerH=56, rowH=54, rows=3, gap=10;
+            const width=900,pad=20,headerH=56,rowH=54,rows=3,gap=10;
             const height = headerH + rows*rowH + (rows-1)*gap + pad*2;
-
             const headTitle = `${owner}/${repo} — Latest activity`;
             const headSub = newest ? `${newest.type}: ${first(newest.title)} • @${newest.by} • ${ago(newest.date)}` : 'No recent activity';
 
             const labelX = pad + 64, textX = pad + 160;
             const rowY = i => pad + headerH + i*(rowH+gap) + Math.floor(rowH/2);
-            const circ = (y, color) => `<circle cx="${pad+32}" cy="${y}" r="18" fill="${color}"/>`;
+            const circ = (y, c) => `<circle cx="${pad+32}" cy="${y}" r="18" fill="${c}"/>`;
             const glyph = (y, t) => `<text x="${pad+32}" y="${y+6}" text-anchor="middle" font-size="14" font-weight="700" fill="#0b0b0d">${t}</text>`;
-            const line = (idx, color, sym, label, item) => {
-              const y = rowY(idx);
-              if (!item) return `
-                <g>
-                  ${circ(y, color)}${glyph(y, sym)}
-                  <text x="${labelX}" y="${y+5}" font-size="14" fill="#E5E7EB">${label}</text>
-                  <text x="${textX}" y="${y+5}" font-size="13" fill="#94A3B8">None</text>
-                </g>`;
-              return `
-                <g>
-                  ${circ(y, color)}${glyph(y, sym)}
-                  <text x="${labelX}" y="${y+5}" font-size="14" fill="#E5E7EB">${label}</text>
-                  <a href="${esc(item.url)}" target="_blank" rel="noopener">
-                    <text x="${textX}" y="${y+5}" font-size="13" fill="#CBD5E1">${esc(item.title)}</text>
-                  </a>
-                  <text x="${width-pad}" y="${y+5}" font-size="12" fill="#A3AFBF" text-anchor="end">${esc(item.extra || '')} • @${esc(item.by)} • ${ago(item.date)}</text>
-                </g>`;
+            const row = (i, color, sym, label, it) => {
+              const y = rowY(i);
+              if (!it) return `<g>${circ(y,color)}${glyph(y,sym)}<text x="${labelX}" y="${y+5}" font-size="14" fill="#E5E7EB">${label}</text><text x="${textX}" y="${y+5}" font-size="13" fill="#94A3B8">None</text></g>`;
+              return `<g>${circ(y,color)}${glyph(y,sym)}<text x="${labelX}" y="${y+5}" font-size="14" fill="#E5E7EB">${label}</text><a href="${esc(it.url)}" target="_blank" rel="noopener"><text x="${textX}" y="${y+5}" font-size="13" fill="#CBD5E1">${esc(it.title)}</text></a><text x="${width-pad}" y="${y+5}" font-size="12" fill="#A3AFBF" text-anchor="end">${esc(it.extra||'')} • @${esc(it.by)} • ${ago(it.date)}</text></g>`;
             };
 
             const svg = `
               <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
                 <style>text{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,sans-serif}</style>
                 <rect width="100%" height="100%" fill="#0b0b0d"/>
-                <g>
-                  <rect x="${pad-6}" y="${pad-6}" width="${width-2*(pad-6)}" height="${height-2*(pad-6)}" rx="16" fill="#0f1115" stroke="#1f2430"/>
-                  <text x="${pad}" y="${pad+18}" font-size="18" font-weight="700" fill="#F3F4F6">${headTitle}</text>
-                  <text x="${pad}" y="${pad+36}" font-size="12" fill="#C9D3DE">${esc(headSub)}</text>
-                </g>
-                ${line(0, '#ef4444', 'C', 'Commit', commit)}
-                ${line(1, '#f59e0b', 'I', 'Issue', issue)}
-                ${line(2, '#3b82f6', 'PR', 'Pull Request', pr)}
+                <g><rect x="${pad-6}" y="${pad-6}" width="${width-2*(pad-6)}" height="${height-2*(pad-6)}" rx="16" fill="#0f1115" stroke="#1f2430"/>
+                   <text x="${pad}" y="${pad+18}" font-size="18" font-weight="700" fill="#F3F4F6">${headTitle}</text>
+                   <text x="${pad}" y="${pad+36}" font-size="12" fill="#C9D3DE">${esc(headSub)}</text></g>
+                ${row(0,'#ef4444','C','Commit',commit)}
+                ${row(1,'#f59e0b','I','Issue',issue)}
+                ${row(2,'#3b82f6','PR','Pull Request',pr)}
               </svg>
             `.trim();
 
+            fs.mkdirSync('assets', { recursive: true });
+            fs.writeFileSync('assets/repo-snapshot.svg', svg, 'utf8');
             const hash = crypto.createHash('sha256').update(svg).digest('hex').slice(0,10);
-            const dir = 'assets';
-            fs.mkdirSync(dir, { recursive: true });
-            const outfile = `${dir}/repo-snapshot-${hash}.svg`;
-            fs.writeFileSync(outfile, svg, 'utf8');
-            core.setOutput('outfile', outfile);
+            core.setOutput('hash', hash);
 
-      - name: Place snapshot inside Live Activity section
+      - name: Cache-bust README image
+        env:
+          HASH: ${{ steps.build.outputs.hash }}
         run: |
-          NEW="${{ steps.build.outputs.outfile }}"
-          START='<!-- SNAPSHOT:START -->'
-          END='<!-- SNAPSHOT:END -->'
-          REPL=$'<p align="left"><img src='"$NEW"' alt="Latest repository activity" /></p>'
-          awk -v start="$START" -v end="$END" -v repl="$REPL" '
-            BEGIN{in=0}
-            {
-              if ($0 ~ start) { print; print repl; in=1; next }
-              if ($0 ~ end)   { in=0; print; next }
-              if (!in) print
-            }' README.md > README.tmp && mv README.tmp README.md
+          sed -E -i 's#!\[Repo Snapshot\]\(\.\/assets\/repo-snapshot\.svg(\?[^)]*)?\)#![Repo Snapshot](./assets/repo-snapshot.svg?v='"$HASH"')#' README.md
 
-      - name: Commit README and asset
+      - name: Commit
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "docs(readme): refresh repo snapshot"
-          file_pattern: README.md assets/repo-snapshot-*.svg
+          file_pattern: README.md assets/repo-snapshot.svg

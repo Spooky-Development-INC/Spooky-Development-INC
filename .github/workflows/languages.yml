@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build languages card
+      - name: Build assets/languages.svg
         id: build
         uses: actions/github-script@v7
         with:
@@ -43,33 +43,16 @@ jobs:
             for (const r of selected) {
               try {
                 const { data } = await github.rest.repos.listLanguages({ owner: r.owner.login, repo: r.name });
-                for (const [lang, bytes] of Object.entries(data || {})) {
-                  totals[lang] = (totals[lang] || 0) + bytes;
-                }
+                for (const [lang, bytes] of Object.entries(data || {})) totals[lang] = (totals[lang] || 0) + bytes;
               } catch {}
             }
 
-            const entries = Object.entries(totals).sort((a, b) => b[1] - a[1]);
-            const sum = entries.reduce((acc, [, v]) => acc + v, 0) || 1;
-            const top = entries.slice(0, 10).map(([lang, bytes]) => ({ lang, bytes, pct: +(bytes * 100 / sum).toFixed(1) }));
+            const entries = Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+            const sum = entries.reduce((a,[,v])=>a+v,0) || 1;
+            const top = entries.slice(0,10).map(([lang,bytes])=>({lang,bytes,pct:+(bytes*100/sum).toFixed(1)}));
 
-            const colors = {
-              Python:'#3776AB', JavaScript:'#F7DF1E', TypeScript:'#3178C6', HTML:'#E34F26', CSS:'#1572B6',
-              Dockerfile:'#2496ED', Shell:'#4EAA25', Bash:'#4EAA25', PowerShell:'#2E74B5', Go:'#00ADD8',
-              Rust:'#DEA584', C:'#5555FF', 'C++':'#004482', 'C#':'#239120', Java:'#E11F27', Kotlin:'#A97BFF',
-              Swift:'#F05138', PHP:'#777BB4', Ruby:'#CC342D', Scala:'#DC322F', Vue:'#41B883', Svelte:'#FF3E00',
-              Dart:'#0175C2', Markdown:'#7A7A7A', 'Jupyter Notebook':'#F37626', Makefile:'#6E6E6E',
-              TeX:'#3D6117', Haskell:'#5D4F85', Elixir:'#4B275F', SQL:'#336791', Other:'#9CA3AF'
-            };
-
-            const slugs = {
-              Python:'python', JavaScript:'javascript', TypeScript:'typescript', HTML:'html5', CSS:'css3',
-              Dockerfile:'docker', Shell:'gnubash', Bash:'gnubash', PowerShell:'powershell', Go:'go',
-              Rust:'rust', C:'c', 'C++':'cplusplus', 'C#':'csharp', Java:'java', Kotlin:'kotlin',
-              Swift:'swift', PHP:'php', Ruby:'ruby', Scala:'scala', Vue:'vuedotjs', Svelte:'svelte',
-              Dart:'dart', Markdown:'markdown', 'Jupyter Notebook':'jupyter', Makefile:'gnu',
-              TeX:'latex', Haskell:'haskell', Elixir:'elixir', SQL:'postgresql'
-            };
+            const colors = {Python:'#3776AB',JavaScript:'#F7DF1E',TypeScript:'#3178C6',HTML:'#E34F26',CSS:'#1572B6',Dockerfile:'#2496ED',Shell:'#4EAA25',Bash:'#4EAA25',PowerShell:'#2E74B5',Go:'#00ADD8',Rust:'#DEA584',C:'#5555FF','C++':'#004482','C#':'#239120',Java:'#E11F27',Kotlin:'#A97BFF',Swift:'#F05138',PHP:'#777BB4',Ruby:'#CC342D',Scala:'#DC322F',Vue:'#41B883',Svelte:'#FF3E00',Dart:'#0175C2',Markdown:'#7A7A7A','Jupyter Notebook':'#F37626',Makefile:'#6E6E6E',TeX:'#3D6117',Haskell:'#5D4F85',Elixir:'#4B275F',SQL:'#336791',Other:'#9CA3AF'};
+            const slugs = {Python:'python',JavaScript:'javascript',TypeScript:'typescript',HTML:'html5',CSS:'css3',Dockerfile:'docker',Shell:'gnubash',Bash:'gnubash',PowerShell:'powershell',Go:'go',Rust:'rust',C:'c','C++':'cplusplus','C#':'csharp',Java:'java',Kotlin:'kotlin',Swift:'swift',PHP:'php',Ruby:'ruby',Scala:'scala',Vue:'vuedotjs',Svelte:'svelte',Dart:'dart',Markdown:'markdown','Jupyter Notebook':'jupyter',Makefile:'gnu',TeX:'latex',Haskell:'haskell',Elixir:'elixir',SQL:'postgresql'};
 
             const tryFetch = async (url) => {
               try {
@@ -80,68 +63,38 @@ jobs:
                 return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
               } catch { return null; }
             };
-
             const fetchIcon = async (name) => {
-              const slug = slugs[name];
-              if (!slug) return null;
-              return (
-                await tryFetch(`https://cdn.simpleicons.org/${slug}/ffffff`) ||
-                await tryFetch(`https://unpkg.com/simple-icons@latest/icons/${slug}.svg`) ||
-                await tryFetch(`https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/${slug}.svg`)
-              );
+              const slug = slugs[name]; if (!slug) return null;
+              return (await tryFetch(`https://cdn.simpleicons.org/${slug}/ffffff`)) ||
+                     (await tryFetch(`https://unpkg.com/simple-icons@latest/icons/${slug}.svg`)) ||
+                     (await tryFetch(`https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/${slug}.svg`));
             };
-
-            const icons = {};
-            await Promise.all(top.map(async t => { icons[t.lang] = await fetchIcon(t.lang); }));
+            const icons = {}; await Promise.all(top.map(async t => { icons[t.lang] = await fetchIcon(t.lang); }));
 
             const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-            const humanBytes = (n)=>{const u=['B','KB','MB','GB'];let i=0,v=n;while(v>=1024&&i<u.length-1){v/=1024;i++;}return `${v.toFixed(v>=10||i===0?0:1)}${u[i]}`;};
-            const acronym = (name) => {
-              if (name === 'Jupyter Notebook') return 'IPy';
-              if (name === 'Dockerfile') return 'Dkr';
-              if (name === 'TypeScript') return 'TS';
-              if (name === 'JavaScript') return 'JS';
-              if (name === 'PowerShell') return 'PS';
-              if (name === 'C++' || name === 'C#') return name;
-              const parts = name.split(/[\s\-]/).filter(Boolean);
-              if (parts.length === 1) return parts[0].slice(0,2).toUpperCase();
-              return (parts[0][0] + parts[1][0]).toUpperCase();
-            };
+            const human = n => {const u=['B','KB','MB','GB'];let i=0,v=n;while(v>=1024&&i<u.length-1){v/=1024;i++;}return `${v.toFixed(v>=10||i===0?0:1)}${u[i]}`;};
+            const acro = n => n==='Jupyter Notebook'?'IPy':n==='Dockerfile'?'Dkr':n==='TypeScript'?'TS':n==='JavaScript'?'JS':n==='PowerShell'?'PS':(n==='C++'||n==='C#')?n:(n.split(/[\s\-]/)[0].slice(0,2).toUpperCase());
 
-            const width=900,leftPad=28,rightPad=28,topPad=70,bottomPad=30,rowH=52,gap=12,iconSize=28,iconCircle=36;
-            const nameX=leftPad+iconCircle+14, barX=nameX+160, barMaxW=width-barX-rightPad-120;
-            const pctX=width-rightPad-72, bytesX=width-rightPad;
-            const height=top.length*(rowH+gap)+topPad+bottomPad;
+            const width=900,left=28,right=28,topPad=70,bottom=30,rowH=52,gap=12,icon=28,circ=36;
+            const nameX=left+circ+14, barX=nameX+160, barMax=width-barX-right-120, pctX=width-right-72, bytesX=width-right;
+            const height=top.length*(rowH+gap)+topPad+bottom;
 
             let rows='', y=topPad;
-            for (const row of top) {
-              const color=colors[row.lang]||colors.Other;
-              const pct=row.pct.toFixed(1).replace(/\.0$/,'');
-              const w=Math.max(4, Math.round(barMaxW*row.pct/100));
-              const gradId=`g${row.lang.replace(/[^a-zA-Z0-9]/g,'')}`;
-
+            for (const r of top) {
+              const col=colors[r.lang]||colors.Other, pct=r.pct.toFixed(1).replace(/\.0$/,''), w=Math.max(4,Math.round(barMax*r.pct/100)), gid=`g${r.lang.replace(/[^a-zA-Z0-9]/g,'')}`;
               rows+=`
-                <defs>
-                  <linearGradient id="${gradId}" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0" stop-color="${color}" stop-opacity="0.95"/>
-                    <stop offset="1" stop-color="${color}" stop-opacity="0.55"/>
-                  </linearGradient>
-                </defs>
+                <defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${col}" stop-opacity="0.95"/><stop offset="1" stop-color="${col}" stop-opacity="0.55"/></linearGradient></defs>
                 <g transform="translate(0, ${y})">
-                  <rect x="${leftPad-6}" y="0" width="${width-leftPad-rightPad+12}" height="${rowH}" rx="14" fill="#0f1115" stroke="#1f2430"/>
-                  <circle cx="${leftPad + iconCircle/2}" cy="${rowH/2}" r="${iconCircle/2}" fill="${color}" />
-                  ${
-                    icons[row.lang]
-                      ? `<image href="${icons[row.lang]}" x="${leftPad + (iconCircle - iconSize)/2}" y="${(rowH - iconSize)/2}" width="${iconSize}" height="${iconSize}"/>`
-                      : `<text x="${leftPad + iconCircle/2}" y="${rowH/2 + 5}" text-anchor="middle" font-size="13" font-weight="700" fill="#0b0b0d">${esc(acronym(row.lang))}</text>`
-                  }
-                  <text x="${nameX}" y="${rowH/2 + 6}" font-size="14" fill="#e5e7eb">${esc(row.lang)}</text>
-                  <rect x="${barX}" y="${rowH/2 - 6}" width="${barMaxW}" height="12" rx="6" fill="#151922"/>
-                  <rect x="${barX}" y="${rowH/2 - 6}" width="${w}" height="12" rx="6" fill="url(#${gradId})"/>
+                  <rect x="${left-6}" y="0" width="${width-left-right+12}" height="${rowH}" rx="14" fill="#0f1115" stroke="#1f2430"/>
+                  <circle cx="${left + circ/2}" cy="${rowH/2}" r="${circ/2}" fill="${col}"/>
+                  ${icons[r.lang] ? `<image href="${icons[r.lang]}" x="${left + (circ - icon)/2}" y="${(rowH - icon)/2}" width="${icon}" height="${icon}"/>`
+                                   : `<text x="${left + circ/2}" y="${rowH/2 + 6}" text-anchor="middle" font-size="13" font-weight="700" fill="#0b0b0d">${esc(acro(r.lang))}</text>`}
+                  <text x="${nameX}" y="${rowH/2 + 6}" font-size="14" fill="#e5e7eb">${esc(r.lang)}</text>
+                  <rect x="${barX}" y="${rowH/2 - 6}" width="${barMax}" height="12" rx="6" fill="#151922"/>
+                  <rect x="${barX}" y="${rowH/2 - 6}" width="${w}" height="12" rx="6" fill="url(#${gid})"/>
                   <text x="${pctX}" y="${rowH/2 + 6}" font-size="12" fill="#cbd5e1" text-anchor="end">${pct}%</text>
-                  <text x="${bytesX}" y="${rowH/2 + 6}" font-size="12" fill="#94a3b8" text-anchor="end">${humanBytes(row.bytes)}</text>
-                </g>
-              `;
+                  <text x="${bytesX}" y="${rowH/2 + 6}" font-size="12" fill="#94a3b8" text-anchor="end">${human(r.bytes)}</text>
+                </g>`;
               y += rowH + gap;
             }
 
@@ -152,33 +105,29 @@ jobs:
               <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
                 <style>text{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,sans-serif}</style>
                 <rect width="100%" height="100%" fill="#0b0b0d"/>
-                <text x="${leftPad}" y="28" font-size="18" font-weight="700" fill="#f1f5f9">${title}</text>
-                <text x="${leftPad}" y="50" font-size="12" fill="#9aa4b2">${subtitle}</text>
+                <text x="${left}" y="28" font-size="18" font-weight="700" fill="#f1f5f9">${title}</text>
+                <text x="${left}" y="50" font-size="12" fill="#9aa4b2">${subtitle}</text>
                 ${rows}
               </svg>
             `.trim();
 
+            fs.mkdirSync('assets', { recursive: true });
+            fs.writeFileSync('assets/languages.svg', svg, 'utf8');
             const hash = crypto.createHash('sha256').update(svg).digest('hex').slice(0,10);
-            const dir = 'assets';
-            fs.mkdirSync(dir, { recursive: true });
-            const outfile = `${dir}/languages-${hash}.svg`;
-            fs.writeFileSync(outfile, svg, 'utf8');
-            core.setOutput('outfile', outfile);
+            core.setOutput('hash', hash);
 
-      - name: Update README link
+      - name: Cache-bust README image
+        env:
+          HASH: ${{ steps.build.outputs.hash }}
         run: |
-          NEW="${{ steps.build.outputs.outfile }}"
-          if grep -Eq '!\[Languages Usage\]\(.*/languages-.*\.svg\)' README.md; then
-            sed -E -i "s#!\[Languages Usage\]\(\./?assets/languages-[^)]+\.svg\)#![Languages Usage](${NEW})#" README.md
+          if grep -Eq '!\[Languages Usage\]\(\./assets/languages\.svg(\?[^)]*)?\)' README.md; then
+            sed -E -i 's#!\[Languages Usage\]\(\.\/assets\/languages\.svg(\?[^)]*)?\)#![Languages Usage](./assets/languages.svg?v='"$HASH"')#' README.md
           else
-            sed -E -i "s#!\[Languages Usage\]\(\./?languages\.svg(\?[^)]*)?\)#![Languages Usage](${NEW})#" README.md || true
-          fi
-          if ! grep -q '![Languages Usage](' README.md; then
-            printf '\n![Languages Usage](%s)\n' "$NEW" >> README.md
+            sed -E -i 's#!\[Languages Usage\]\(\.\/languages\.svg(\?[^)]*)?\)#![Languages Usage](./assets/languages.svg?v='"$HASH"')#' README.md || true
           fi
 
-      - name: Commit changes
+      - name: Commit
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(readme): refresh languages card"
-          file_pattern: README.md assets/languages-*.svg
+          file_pattern: README.md assets/languages.svg
