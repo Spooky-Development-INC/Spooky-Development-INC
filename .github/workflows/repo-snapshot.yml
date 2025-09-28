@@ -60,12 +60,7 @@ jobs:
             const p0 = pRes.data[0];
             const pr = p0 ? { type:'Pull Request', title:first(p0.title||''), url:p0.html_url, by:p0.user?.login||'unknown', date:p0.updated_at, extra:`#${p0.number} • ${p0.merged_at?'merged':p0.state}` } : null;
 
-            const items = [commit, issue, pr].filter(Boolean);
-            const newest = items.length ? items.slice().sort((a,b)=> new Date(b.date)-new Date(a.date))[0] : null;
-
-            const updatedText = newest ? `Updated ${ago(newest.date)}` : 'No recent activity';
-
-            const width=980, pad=24, headerH=64, rowH=78, rows=3, gap=12;
+            const width=980, pad=24, headerH=52, rowH=78, rows=3, gap=12;
             const height = headerH + rows*rowH + (rows-1)*gap + pad*2;
 
             const headTitle = `${owner}/${repo} — Latest activity`;
@@ -106,9 +101,8 @@ jobs:
                 <rect width="100%" height="100%" fill="#0b0b0d"/>
                 <g>
                   <rect x="${pad-8}" y="${pad-8}" width="${width-2*(pad-8)}" height="${height-2*(pad-8)}" rx="20" fill="#0d0f14" stroke="#1f2430"/>
-                  <rect x="${pad-8}" y="${pad-8}" width="${width-2*(pad-8)}" height="58" rx="20" fill="#10131a"/>
-                  <text x="${pad}" y="${pad+24}" font-size="22" font-weight="900" fill="#F3F4F6">${headTitle}</text>
-                  <text x="${pad}" y="${pad+44}" font-size="14" fill="#D0D7E2">${esc(updatedText)}</text>
+                  <rect x="${pad-8}" y="${pad-8}" width="${width-2*(pad-8)}" height="${headerH}" rx="20" fill="#10131a"/>
+                  <text x="${pad}" y="${pad+26}" font-size="22" font-weight="900" fill="#F3F4F6">${headTitle}</text>
                 </g>
                 ${row(0,'#ef4444','C','Commit',commit)}
                 ${row(1,'#f59e0b','I','Issue',issue)}
@@ -130,5 +124,5 @@ jobs:
       - name: Commit
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "docs(readme): refresh repo snapshot (labels + header)"
+          commit_message: "docs(readme): refresh repo snapshot (remove subtitle)"
           file_pattern: README.md assets/repo-snapshot.svg
