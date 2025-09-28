@@ -9,5 +9,5 @@
 ![Languages Usage](./assets/languages.svg?v=5ecb45f202)
 
 ## Contact
-- Discord: **[Join our server](#)**
+- Discord: **[Join our server](https://discord.gg/XYspZgEEJb)**
 - Email: **spkydevelopment@gmail.com**
