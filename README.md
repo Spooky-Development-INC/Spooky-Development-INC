@@ -9,7 +9,7 @@ _(Loading recent activity…)_
 <!-- ACTIVITY:END -->
 
 ## Languages & Tech
-![Languages Usage](./languages.svg)
+![Languages Usage](./languages.svg?v=0395d9ff74528bbcfc1fe3035a3180d716255708)
 
 ## Contact
 - Discord: **[Join our server](#)**
