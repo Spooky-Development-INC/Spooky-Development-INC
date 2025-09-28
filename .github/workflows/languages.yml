@@ -2,11 +2,15 @@ name: Update Languages SVG
 
 on:
   schedule:
-    - cron: "*/5 * * * *"   # every 5 minutes
+    - cron: "*/5 * * * *"
   workflow_dispatch: {}
 
 permissions:
   contents: write
+
+concurrency:
+  group: languages-svg
+  cancel-in-progress: true
 
 env:
   MAX_REPOS: "50"
@@ -17,33 +21,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Debug token/org access
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.ORG_READ_TOKEN }}
+          script: |
+            const who = await github.rest.users.getAuthenticated();
+            core.info(`Authenticated as: ${who.data.login}`);
+            const org = context.repo.owner;
+            const orgInfo = await github.rest.orgs.get({ org });
+            core.info(`Org reachable: ${orgInfo.data.login}`);
+
       - name: Aggregate languages & generate SVG
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.ORG_READ_TOKEN }}
           script: |
             const fs = require('fs');
-
             const org = context.repo.owner;
             const maxRepos = parseInt(process.env.MAX_REPOS, 10);
-
-            core.info(`Using org: ${org}`);
-
-            try {
-              const orgInfo = await github.rest.orgs.get({ org });
-              core.info(`Org OK: ${orgInfo.data.login}`);
-            } catch (e) {
-              core.setFailed(`Org not found or token lacks access: ${org}`);
-              return;
-            }
 
             const repos = await github.paginate(
               github.rest.repos.listForOrg,
               { org, type: "all", per_page: 100, sort: "updated" }
             );
-
             const selected = repos.slice(0, maxRepos);
-            core.info(`Scanning ${selected.length} repos (of ${repos.length} listed)`);
 
             const totals = {};
             for (const r of selected) {
@@ -55,28 +57,24 @@ jobs:
                 for (const [lang, bytes] of Object.entries(data || {})) {
                   totals[lang] = (totals[lang] || 0) + bytes;
                 }
-              } catch (e) {
-                core.info(`Skip ${r.full_name}: ${e.status || e.message}`);
-              }
+              } catch {}
             }
 
-            const entries = Object.entries(totals).sort((a, b) => b[1] - a[1]);
-            const sum = entries.reduce((acc, [, v]) => acc + v, 0) || 1;
+            const entries = Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+            const sum = entries.reduce((acc, [,v])=>acc+v, 0) || 1;
             const top = entries.slice(0, 10).map(([lang, bytes]) => ({
-              lang,
-              pct: +(bytes * 100 / sum).toFixed(1),
+              lang, pct: +(bytes * 100 / sum).toFixed(1)
             }));
 
             const width = 800, barH = 22, gap = 10, leftPad = 140, rightPad = 40, topPad = 30;
-            const height = top.length * (barH + gap) + topPad + 10;
-            const title = `Languages (${top.map(x => `${x.lang} ${x.pct}%`).join(' • ')})`;
-
-            const esc = (s) => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;'}[c]));
+            const height = top.length*(barH+gap) + topPad + 10;
+            const title = `Languages (${top.map(x=>`${x.lang} ${x.pct}%`).join(' • ')})`;
+            const esc = s => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;'}[c]));
 
             let bars = '';
             let y = topPad;
             for (const row of top) {
-              const w = Math.max(2, Math.round((width - leftPad - rightPad) * row.pct / 100));
+              const w = Math.max(2, Math.round((width-leftPad-rightPad) * row.pct/100));
               bars += `
                 <text x="${leftPad-8}" y="${y+barH-6}" text-anchor="end" font-size="12" fill="#e5e7eb">${esc(row.lang)}</text>
                 <rect x="${leftPad}" y="${y}" width="${w}" height="${barH}" rx="6" fill="#ef4444" />
