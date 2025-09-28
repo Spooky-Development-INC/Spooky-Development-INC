@@ -19,3 +19,5 @@ _(Rendering latest activity…)_
 ![Repo Snapshot](assets/repo-snapshot-63fb03151d.svg)
 
 ![Languages Usage](assets/languages-5f0501abe3.svg)
+
+![Languages Usage](assets/languages-5f0501abe3.svg)
