@@ -9,7 +9,6 @@ permissions:
   contents: write
 
 env:
-  ORG_NAME: Spooky-Development-INC
   MAX_REPOS: "50"
 
 jobs:
@@ -25,17 +24,26 @@ jobs:
           script: |
             const fs = require('fs');
 
-            const org = process.env.ORG_NAME;
+            const org = context.repo.owner;
             const maxRepos = parseInt(process.env.MAX_REPOS, 10);
 
-            const repos = await github.paginate(github.rest.repos.listForOrg, {
-              org,
-              type: "all",
-              per_page: 100,
-              sort: "updated",
-            });
+            core.info(`Using org: ${org}`);
+
+            try {
+              const orgInfo = await github.rest.orgs.get({ org });
+              core.info(`Org OK: ${orgInfo.data.login}`);
+            } catch (e) {
+              core.setFailed(`Org not found or token lacks access: ${org}`);
+              return;
+            }
+
+            const repos = await github.paginate(
+              github.rest.repos.listForOrg,
+              { org, type: "all", per_page: 100, sort: "updated" }
+            );
 
             const selected = repos.slice(0, maxRepos);
+            core.info(`Scanning ${selected.length} repos (of ${repos.length} listed)`);
 
             const totals = {};
             for (const r of selected) {
@@ -47,8 +55,8 @@ jobs:
                 for (const [lang, bytes] of Object.entries(data || {})) {
                   totals[lang] = (totals[lang] || 0) + bytes;
                 }
-              } catch {
-                continue;
+              } catch (e) {
+                core.info(`Skip ${r.full_name}: ${e.status || e.message}`);
               }
             }
 
@@ -59,20 +67,11 @@ jobs:
               pct: +(bytes * 100 / sum).toFixed(1),
             }));
 
-            const width = 800,
-                  barH = 22,
-                  gap = 10,
-                  leftPad = 140,
-                  rightPad = 40,
-                  topPad = 30;
+            const width = 800, barH = 22, gap = 10, leftPad = 140, rightPad = 40, topPad = 30;
             const height = top.length * (barH + gap) + topPad + 10;
             const title = `Languages (${top.map(x => `${x.lang} ${x.pct}%`).join(' • ')})`;
 
-            function esc(s) {
-              return s.replace(/[&<>"']/g, c => ({
-                '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
-              }[c]));
-            }
+            const esc = (s) => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;'}[c]));
 
             let bars = '';
             let y = topPad;
@@ -89,15 +88,15 @@ jobs:
             const svg = `
               <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
                 <style>
-                  text { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, sans-serif; }
+                  text { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Noto Sans, sans-serif; }
                 </style>
                 <rect width="100%" height="100%" fill="#0b0b0d"/>
                 <text x="20" y="20" font-size="14" fill="#f3f4f6">${esc(title)}</text>
                 ${bars}
               </svg>
-            `;
+            `.trim();
 
-            fs.writeFileSync('languages.svg', svg.trim(), 'utf8');
+            fs.writeFileSync('languages.svg', svg, 'utf8');
 
       - name: Commit languages.svg
         uses: stefanzweifel/git-auto-commit-action@v5
