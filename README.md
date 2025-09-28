@@ -21,3 +21,5 @@ _(Rendering latest activity…)_
 ![Languages Usage](assets/languages-5f0501abe3.svg)
 
 ![Languages Usage](assets/languages-5f0501abe3.svg)
+
+![Languages Usage](assets/languages-5f0501abe3.svg)
