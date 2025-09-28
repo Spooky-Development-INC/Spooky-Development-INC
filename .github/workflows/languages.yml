@@ -22,12 +22,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build languages.svg
+        id: build
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.ORG_READ_TOKEN }}
           script: |
             const fs = require('fs');
-
             const org = context.repo.owner;
             const maxRepos = parseInt(process.env.MAX_REPOS || '50', 10);
 
@@ -47,9 +47,9 @@ jobs:
               } catch {}
             }
 
-            const entries = Object.entries(totals).sort((a, b) => b[1] - a[1]);
-            const sum = entries.reduce((acc, [, v]) => acc + v, 0) || 1;
-            const top = entries.slice(0, 10).map(([lang, bytes]) => ({ lang, bytes, pct: +(bytes * 100 / sum).toFixed(1) }));
+            const entries = Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+            const sum = entries.reduce((a,[,v])=>a+v,0) || 1;
+            const top = entries.slice(0,10).map(([lang,bytes])=>({lang,bytes,pct:+(bytes*100/sum).toFixed(1)}));
 
             const colors = {
               Python:'#3776AB', JavaScript:'#F7DF1E', TypeScript:'#3178C6', HTML:'#E34F26', CSS:'#1572B6',
@@ -73,56 +73,41 @@ jobs:
               const slug = slugs[name] || 'codeforces';
               try {
                 const res = await fetch(`https://cdn.simpleicons.org/${slug}/ffffff`);
-                if (!res.ok) throw new Error('icon fetch failed');
+                if (!res.ok) return null;
                 let svg = await res.text();
-                svg = svg.replace(/<\?xml.*?\?>/g, '').replace(/<!--.*?-->/gs, '').replace(/\s+/g,' ').trim();
+                svg = svg.replace(/<\?xml.*?\?>/g,'').replace(/<!--.*?-->/gs,'').replace(/\s+/g,' ').trim();
                 return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-              } catch {
-                return null;
-              }
+              } catch { return null; }
             };
 
             const icons = {};
             await Promise.all(top.map(async t => { icons[t.lang] = await fetchIcon(t.lang); }));
 
-            const width = 900;
-            const leftPad = 28;
-            const rightPad = 28;
-            const topPad = 70;
-            const bottomPad = 30;
-            const rowH = 48;
-            const gap = 12;
-            const iconSize = 28;
-            const iconCircle = 34;
-            const nameX = leftPad + iconCircle + 14;
-            const barX = nameX + 160;
-            const barMaxW = width - barX - rightPad - 90;
-            const height = top.length * (rowH + gap) + topPad + bottomPad;
-
             const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-            const humanBytes = (n) => { const u=['B','KB','MB','GB']; let i=0,v=n; while(v>=1024&&i<u.length-1){v/=1024;i++;} return `${v.toFixed(v>=10||i===0?0:1)}${u[i]}`; };
+            const humanBytes = (n)=>{const u=['B','KB','MB','GB'];let i=0,v=n;while(v>=1024&&i<u.length-1){v/=1024;i++;}return `${v.toFixed(v>=10||i===0?0:1)}${u[i]}`;};
 
-            let rows = '';
-            let y = topPad;
+            const width=900,leftPad=28,rightPad=28,topPad=70,bottomPad=30,rowH=48,gap=12,iconSize=28,iconCircle=34;
+            const nameX=leftPad+iconCircle+14, barX=nameX+160, barMaxW=width-barX-rightPad-90;
+            const height=top.length*(rowH+gap)+topPad+bottomPad;
 
+            let rows='', y=topPad;
             for (const row of top) {
-              const color = colors[row.lang] || colors.Other;
-              const pct = row.pct.toFixed(1).replace(/\.0$/,'');
-              const w = Math.max(4, Math.round(barMaxW * row.pct / 100));
-              const gradId = `g${row.lang.replace(/[^a-zA-Z0-9]/g,'')}`;
+              const color=colors[row.lang]||colors.Other;
+              const pct=row.pct.toFixed(1).replace(/\.0$/,'');
+              const w=Math.max(4, Math.round(barMaxW*row.pct/100));
+              const gradId=`g${row.lang.replace(/[^a-zA-Z0-9]/g,'')}`;
 
-              rows += `
+              rows+=`
                 <defs>
                   <linearGradient id="${gradId}" x1="0" y1="0" x2="1" y2="0">
                     <stop offset="0" stop-color="${color}" stop-opacity="0.95"/>
                     <stop offset="1" stop-color="${color}" stop-opacity="0.55"/>
                   </linearGradient>
                 </defs>
-
                 <g transform="translate(0, ${y})">
                   <rect x="${leftPad-4}" y="0" width="${width-leftPad-rightPad+8}" height="${rowH}" rx="12" fill="#0f1115" stroke="#1f2430"/>
                   <circle cx="${leftPad + iconCircle/2}" cy="${rowH/2}" r="${iconCircle/2}" fill="${color}" />
-                  ${icons[row.lang] ? `<image href="${icons[row.lang]}" x="${leftPad + (iconCircle - iconSize)/2}" y="${(rowH - iconSize)/2}" width="${iconSize}" height="${iconSize}" />` : ''}
+                  ${icons[row.lang] ? `<image href="${icons[row.lang]}" x="${leftPad + (iconCircle - iconSize)/2}" y="${(rowH - iconSize)/2}" width="${iconSize}" height="${iconSize}"/>` : ''}
                   <text x="${nameX}" y="${rowH/2 + 5}" font-size="14" fill="#e5e7eb">${esc(row.lang)}</text>
                   <text x="${barX + w + 10}" y="${rowH/2 + 5}" font-size="12" fill="#cbd5e1">${pct}%</text>
                   <text x="${width - rightPad}" y="${rowH/2 + 5}" font-size="12" fill="#94a3b8" text-anchor="end">${humanBytes(row.bytes)}</text>
@@ -133,14 +118,12 @@ jobs:
               y += rowH + gap;
             }
 
-            const title = 'Languages usage';
-            const subtitle = `Analyzed ${selected.length} repositories • ${Object.keys(totals).length} languages`;
+            const title='Languages usage';
+            const subtitle=`Analyzed ${selected.length} repositories • ${Object.keys(totals).length} languages`;
 
             const svg = `
               <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-                <style>
-                  text { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, sans-serif; }
-                </style>
+                <style>text{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,sans-serif}</style>
                 <rect width="100%" height="100%" fill="#0b0b0d"/>
                 <text x="${leftPad}" y="28" font-size="18" font-weight="700" fill="#f1f5f9">${esc(title)}</text>
                 <text x="${leftPad}" y="50" font-size="12" fill="#9aa4b2">${esc(subtitle)}</text>
@@ -151,7 +134,21 @@ jobs:
             fs.writeFileSync('languages.svg', svg, 'utf8');
 
       - name: Commit languages.svg
+        id: commit_svg
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: update languages.svg"
           file_pattern: languages.svg
+
+      - name: Cache-bust README image
+        if: steps.commit_svg.outputs.changes_detected == 'true'
+        run: |
+          SHA="${{ steps.commit_svg.outputs.commit_hash }}"
+          sed -E -i 's#\((\.\/)?languages\.svg(\?[^)]*)?\)#(./languages.svg?v='"$SHA"')#' README.md
+
+      - name: Commit README (cache-bust)
+        if: steps.commit_svg.outputs.changes_detected == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "docs: cache-bust languages.svg in README"
+          file_pattern: README.md
