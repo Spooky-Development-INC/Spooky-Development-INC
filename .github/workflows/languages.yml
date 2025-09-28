@@ -21,13 +21,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build languages.svg
+      - name: Build languages card
         id: build
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.ORG_READ_TOKEN }}
           script: |
             const fs = require('fs');
+            const crypto = require('crypto');
 
             const org = context.repo.owner;
             const maxRepos = parseInt(process.env.MAX_REPOS || '50', 10);
@@ -151,30 +152,33 @@ jobs:
               <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
                 <style>text{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,sans-serif}</style>
                 <rect width="100%" height="100%" fill="#0b0b0d"/>
-                <text x="${leftPad}" y="28" font-size="18" font-weight="700" fill="#f1f5f9">${esc(title)}</text>
-                <text x="${leftPad}" y="50" font-size="12" fill="#9aa4b2">${esc(subtitle)}</text>
+                <text x="${leftPad}" y="28" font-size="18" font-weight="700" fill="#f1f5f9">${title}</text>
+                <text x="${leftPad}" y="50" font-size="12" fill="#9aa4b2">${subtitle}</text>
                 ${rows}
               </svg>
             `.trim();
 
-            fs.writeFileSync('languages.svg', svg, 'utf8');
+            const hash = crypto.createHash('sha256').update(svg).digest('hex').slice(0,10);
+            const dir = 'assets';
+            fs.mkdirSync(dir, { recursive: true });
+            const outfile = `${dir}/languages-${hash}.svg`;
+            fs.writeFileSync(outfile, svg, 'utf8');
+            core.setOutput('outfile', outfile);
 
-      - name: Commit languages.svg
-        id: commit_svg
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore: update languages.svg"
-          file_pattern: languages.svg
-
-      - name: Cache-bust README image
-        if: steps.commit_svg.outputs.changes_detected == 'true'
+      - name: Update README link
         run: |
-          SHA="${{ steps.commit_svg.outputs.commit_hash }}"
-          sed -E -i 's#\((\.\/)?languages\.svg(\?[^)]*)?\)#(./languages.svg?v='"$SHA"')#' README.md
+          NEW="${{ steps.build.outputs.outfile }}"
+          if grep -Eq '!\[Languages Usage\]\(.*/languages-.*\.svg\)' README.md; then
+            sed -E -i "s#!\[Languages Usage\]\(\./?assets/languages-[^)]+\.svg\)#![Languages Usage](${NEW})#" README.md
+          else
+            sed -E -i "s#!\[Languages Usage\]\(\./?languages\.svg(\?[^)]*)?\)#![Languages Usage](${NEW})#" README.md || true
+          fi
+          if ! grep -q '![Languages Usage](' README.md; then
+            printf '\n![Languages Usage](%s)\n' "$NEW" >> README.md
+          fi
 
-      - name: Commit README (cache-bust)
-        if: steps.commit_svg.outputs.changes_detected == 'true'
+      - name: Commit changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "docs: cache-bust languages.svg in README"
-          file_pattern: README.md
+          commit_message: "chore(readme): refresh languages card"
+          file_pattern: README.md assets/languages-*.svg
