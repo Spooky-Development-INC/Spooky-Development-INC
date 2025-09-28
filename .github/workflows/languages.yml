@@ -21,25 +21,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Debug token/org access
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.ORG_READ_TOKEN }}
-          script: |
-            const who = await github.rest.users.getAuthenticated();
-            core.info(`Authenticated as: ${who.data.login}`);
-            const org = context.repo.owner;
-            const orgInfo = await github.rest.orgs.get({ org });
-            core.info(`Org reachable: ${orgInfo.data.login}`);
-
       - name: Aggregate languages & generate SVG
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.ORG_READ_TOKEN }}
           script: |
             const fs = require('fs');
+
             const org = context.repo.owner;
-            const maxRepos = parseInt(process.env.MAX_REPOS, 10);
+            const maxRepos = parseInt(process.env.MAX_REPOS, 10) || 50;
 
             const repos = await github.paginate(
               github.rest.repos.listForOrg,
@@ -63,34 +53,138 @@ jobs:
             const entries = Object.entries(totals).sort((a,b)=>b[1]-a[1]);
             const sum = entries.reduce((acc, [,v])=>acc+v, 0) || 1;
             const top = entries.slice(0, 10).map(([lang, bytes]) => ({
-              lang, pct: +(bytes * 100 / sum).toFixed(1)
+              lang,
+              bytes,
+              pct: +(bytes * 100 / sum).toFixed(1)
             }));
 
-            const width = 800, barH = 22, gap = 10, leftPad = 140, rightPad = 40, topPad = 30;
-            const height = top.length*(barH+gap) + topPad + 10;
-            const title = `Languages (${top.map(x=>`${x.lang} ${x.pct}%`).join(' • ')})`;
-            const esc = s => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;'}[c]));
+            const colors = {
+              "Python":"#3776AB",
+              "JavaScript":"#F7DF1E",
+              "TypeScript":"#3178C6",
+              "HTML":"#E34F26",
+              "CSS":"#1572B6",
+              "Dockerfile":"#2496ED",
+              "Shell":"#4EAA25",
+              "Bash":"#4EAA25",
+              "Go":"#00ADD8",
+              "Rust":"#DEA584",
+              "C":"#5555FF",
+              "C++":"#004482",
+              "C#":"#239120",
+              "Java":"#E11F27",
+              "Kotlin":"#A97BFF",
+              "Swift":"#F05138",
+              "PHP":"#777BB4",
+              "Ruby":"#CC342D",
+              "Scala":"#DC322F",
+              "Vue":"#41B883",
+              "Svelte":"#FF3E00",
+              "Dart":"#0175C2",
+              "Markdown":"#7A7A7A",
+              "Jupyter Notebook":"#F37626",
+              "Makefile":"#6E6E6E",
+              "TeX":"#3D6117",
+              "Haskell":"#5D4F85",
+              "Elixir":"#4B275F",
+              "SQL":"#336791",
+              "Other":"#9CA3AF"
+            };
 
-            let bars = '';
+            const acronym = (name) => {
+              if (name === "Jupyter Notebook") return "IPy";
+              if (name === "Dockerfile") return "Dkr";
+              if (name === "TypeScript") return "TS";
+              if (name === "JavaScript") return "JS";
+              if (name === "Markdown") return "MD";
+              if (name === "C++") return "C++";
+              if (name === "C#") return "C#";
+              if (name === "Jinja") return "Jj";
+              const parts = name.split(/[\s\-]/).filter(Boolean);
+              if (parts.length === 1) return parts[0].slice(0,2);
+              return (parts[0][0] + parts[1][0]).toUpperCase();
+            };
+
+            const humanBytes = (n) => {
+              const units = ["B","KB","MB","GB"];
+              let i = 0;
+              let v = n;
+              while (v >= 1024 && i < units.length-1) { v /= 1024; i++; }
+              return `${v.toFixed(v >= 10 || i === 0 ? 0 : 1)}${units[i]}`;
+            };
+
+            const width = 900;
+            const leftPad = 28;
+            const rightPad = 28;
+            const innerPad = 24;
+            const rowH = 40;
+            const gap = 10;
+            const topPad = 64;
+            const bottomPad = 28;
+            const barMaxW = width - leftPad - rightPad - innerPad - 260;
+            const height = top.length * (rowH + gap) + topPad + bottomPad;
+
+            const totalLabel = `Total analyzed: ${Object.keys(totals).length} languages across ${selected.length} repositories`;
+            const title = `Languages usage`;
+
+            const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+            let rows = "";
             let y = topPad;
+
             for (const row of top) {
-              const w = Math.max(2, Math.round((width-leftPad-rightPad) * row.pct/100));
-              bars += `
-                <text x="${leftPad-8}" y="${y+barH-6}" text-anchor="end" font-size="12" fill="#e5e7eb">${esc(row.lang)}</text>
-                <rect x="${leftPad}" y="${y}" width="${w}" height="${barH}" rx="6" fill="#ef4444" />
-                <text x="${leftPad + w + 6}" y="${y+barH-6}" font-size="12" fill="#e5e7eb">${row.pct}%</text>
+              const color = colors[row.lang] || colors["Other"];
+              const acr = esc(acronym(row.lang));
+              const langName = esc(row.lang);
+              const pct = row.pct.toFixed(1).replace(/\.0$/,"");
+              const w = Math.max(4, Math.round(barMaxW * row.pct / 100));
+
+              const gradientId = `g${langName.replace(/[^a-zA-Z0-9]/g,'')}`;
+              const barX = leftPad + 220;
+              const pillX = leftPad;
+              const nameX = leftPad + 64;
+
+              rows += `
+                <defs>
+                  <linearGradient id="${gradientId}" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0" stop-color="${color}" stop-opacity="0.9"/>
+                    <stop offset="1" stop-color="${color}" stop-opacity="0.55"/>
+                  </linearGradient>
+                </defs>
+
+                <g transform="translate(0, ${y})">
+                  <rect x="${leftPad}" y="0" width="${width - leftPad - rightPad}" height="${rowH}" rx="10" fill="#0f1115" stroke="#1f2430" stroke-width="1"/>
+                  <rect x="${pillX}" y="8" width="48" height="24" rx="12" fill="${color}" />
+                  <text x="${pillX + 24}" y="25" text-anchor="middle" font-size="12" font-weight="700" fill="#0b0b0d">${acr}</text>
+
+                  <text x="${nameX}" y="26" font-size="14" fill="#e5e7eb">${langName}</text>
+                  <text x="${barX + w + 10}" y="26" font-size="12" fill="#cbd5e1">${pct}%</text>
+                  <text x="${width - rightPad - 4}" y="26" font-size="12" fill="#94a3b8" text-anchor="end">${humanBytes(row.bytes)}</text>
+
+                  <rect x="${barX}" y="10" width="${barMaxW}" height="8" rx="4" fill="#151922"/>
+                  <rect x="${barX}" y="10" width="${w}" height="8" rx="4" fill="url(#${gradientId})"/>
+                </g>
               `;
-              y += barH + gap;
+              y += rowH + gap;
             }
 
             const svg = `
-              <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+              <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
                 <style>
-                  text { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Noto Sans, sans-serif; }
+                  text { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, sans-serif; }
                 </style>
+                <defs>
+                  <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.35"/>
+                  </filter>
+                </defs>
                 <rect width="100%" height="100%" fill="#0b0b0d"/>
-                <text x="20" y="20" font-size="14" fill="#f3f4f6">${esc(title)}</text>
-                ${bars}
+                <g filter="url(#cardShadow)">
+                  <rect x="${leftPad - 8}" y="${topPad - 52}" width="${width - leftPad - rightPad + 16}" height="${height - topPad - bottomPad + 60}" rx="16" fill="#0d0f14" stroke="#1f2430" />
+                </g>
+                <text x="${leftPad}" y="28" font-size="18" font-weight="700" fill="#f1f5f9">${esc(title)}</text>
+                <text x="${leftPad}" y="48" font-size="12" fill="#9aa4b2">${esc(totalLabel)}</text>
+                ${rows}
               </svg>
             `.trim();
 
