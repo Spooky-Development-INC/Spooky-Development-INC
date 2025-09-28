@@ -28,6 +28,7 @@ jobs:
           github-token: ${{ secrets.ORG_READ_TOKEN }}
           script: |
             const fs = require('fs');
+
             const org = context.repo.owner;
             const maxRepos = parseInt(process.env.MAX_REPOS || '50', 10);
 
@@ -47,9 +48,9 @@ jobs:
               } catch {}
             }
 
-            const entries = Object.entries(totals).sort((a,b)=>b[1]-a[1]);
-            const sum = entries.reduce((a,[,v])=>a+v,0) || 1;
-            const top = entries.slice(0,10).map(([lang,bytes])=>({lang,bytes,pct:+(bytes*100/sum).toFixed(1)}));
+            const entries = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+            const sum = entries.reduce((acc, [, v]) => acc + v, 0) || 1;
+            const top = entries.slice(0, 10).map(([lang, bytes]) => ({ lang, bytes, pct: +(bytes * 100 / sum).toFixed(1) }));
 
             const colors = {
               Python:'#3776AB', JavaScript:'#F7DF1E', TypeScript:'#3178C6', HTML:'#E34F26', CSS:'#1572B6',
@@ -69,10 +70,9 @@ jobs:
               TeX:'latex', Haskell:'haskell', Elixir:'elixir', SQL:'postgresql'
             };
 
-            const fetchIcon = async (name) => {
-              const slug = slugs[name] || 'codeforces';
+            const tryFetch = async (url) => {
               try {
-                const res = await fetch(`https://cdn.simpleicons.org/${slug}/ffffff`);
+                const res = await fetch(url);
                 if (!res.ok) return null;
                 let svg = await res.text();
                 svg = svg.replace(/<\?xml.*?\?>/g,'').replace(/<!--.*?-->/gs,'').replace(/\s+/g,' ').trim();
@@ -80,14 +80,36 @@ jobs:
               } catch { return null; }
             };
 
+            const fetchIcon = async (name) => {
+              const slug = slugs[name];
+              if (!slug) return null;
+              return (
+                await tryFetch(`https://cdn.simpleicons.org/${slug}/ffffff`) ||
+                await tryFetch(`https://unpkg.com/simple-icons@latest/icons/${slug}.svg`) ||
+                await tryFetch(`https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/${slug}.svg`)
+              );
+            };
+
             const icons = {};
             await Promise.all(top.map(async t => { icons[t.lang] = await fetchIcon(t.lang); }));
 
             const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
             const humanBytes = (n)=>{const u=['B','KB','MB','GB'];let i=0,v=n;while(v>=1024&&i<u.length-1){v/=1024;i++;}return `${v.toFixed(v>=10||i===0?0:1)}${u[i]}`;};
+            const acronym = (name) => {
+              if (name === 'Jupyter Notebook') return 'IPy';
+              if (name === 'Dockerfile') return 'Dkr';
+              if (name === 'TypeScript') return 'TS';
+              if (name === 'JavaScript') return 'JS';
+              if (name === 'PowerShell') return 'PS';
+              if (name === 'C++' || name === 'C#') return name;
+              const parts = name.split(/[\s\-]/).filter(Boolean);
+              if (parts.length === 1) return parts[0].slice(0,2).toUpperCase();
+              return (parts[0][0] + parts[1][0]).toUpperCase();
+            };
 
-            const width=900,leftPad=28,rightPad=28,topPad=70,bottomPad=30,rowH=48,gap=12,iconSize=28,iconCircle=34;
-            const nameX=leftPad+iconCircle+14, barX=nameX+160, barMaxW=width-barX-rightPad-90;
+            const width=900,leftPad=28,rightPad=28,topPad=70,bottomPad=30,rowH=52,gap=12,iconSize=28,iconCircle=36;
+            const nameX=leftPad+iconCircle+14, barX=nameX+160, barMaxW=width-barX-rightPad-120;
+            const pctX=width-rightPad-72, bytesX=width-rightPad;
             const height=top.length*(rowH+gap)+topPad+bottomPad;
 
             let rows='', y=topPad;
@@ -105,14 +127,18 @@ jobs:
                   </linearGradient>
                 </defs>
                 <g transform="translate(0, ${y})">
-                  <rect x="${leftPad-4}" y="0" width="${width-leftPad-rightPad+8}" height="${rowH}" rx="12" fill="#0f1115" stroke="#1f2430"/>
+                  <rect x="${leftPad-6}" y="0" width="${width-leftPad-rightPad+12}" height="${rowH}" rx="14" fill="#0f1115" stroke="#1f2430"/>
                   <circle cx="${leftPad + iconCircle/2}" cy="${rowH/2}" r="${iconCircle/2}" fill="${color}" />
-                  ${icons[row.lang] ? `<image href="${icons[row.lang]}" x="${leftPad + (iconCircle - iconSize)/2}" y="${(rowH - iconSize)/2}" width="${iconSize}" height="${iconSize}"/>` : ''}
-                  <text x="${nameX}" y="${rowH/2 + 5}" font-size="14" fill="#e5e7eb">${esc(row.lang)}</text>
-                  <text x="${barX + w + 10}" y="${rowH/2 + 5}" font-size="12" fill="#cbd5e1">${pct}%</text>
-                  <text x="${width - rightPad}" y="${rowH/2 + 5}" font-size="12" fill="#94a3b8" text-anchor="end">${humanBytes(row.bytes)}</text>
-                  <rect x="${barX}" y="${rowH/2 - 5}" width="${barMaxW}" height="10" rx="5" fill="#151922"/>
-                  <rect x="${barX}" y="${rowH/2 - 5}" width="${w}" height="10" rx="5" fill="url(#${gradId})"/>
+                  ${
+                    icons[row.lang]
+                      ? `<image href="${icons[row.lang]}" x="${leftPad + (iconCircle - iconSize)/2}" y="${(rowH - iconSize)/2}" width="${iconSize}" height="${iconSize}"/>`
+                      : `<text x="${leftPad + iconCircle/2}" y="${rowH/2 + 5}" text-anchor="middle" font-size="13" font-weight="700" fill="#0b0b0d">${esc(acronym(row.lang))}</text>`
+                  }
+                  <text x="${nameX}" y="${rowH/2 + 6}" font-size="14" fill="#e5e7eb">${esc(row.lang)}</text>
+                  <rect x="${barX}" y="${rowH/2 - 6}" width="${barMaxW}" height="12" rx="6" fill="#151922"/>
+                  <rect x="${barX}" y="${rowH/2 - 6}" width="${w}" height="12" rx="6" fill="url(#${gradId})"/>
+                  <text x="${pctX}" y="${rowH/2 + 6}" font-size="12" fill="#cbd5e1" text-anchor="end">${pct}%</text>
+                  <text x="${bytesX}" y="${rowH/2 + 6}" font-size="12" fill="#94a3b8" text-anchor="end">${humanBytes(row.bytes)}</text>
                 </g>
               `;
               y += rowH + gap;
