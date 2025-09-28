@@ -1,0 +1,106 @@
+name: Update Languages SVG
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # every 5 minutes
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+env:
+  ORG_NAME: SpookyDevelopmentINC   # change to your org name
+  MAX_REPOS: "50"
+
+jobs:
+  langs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Aggregate languages & generate SVG
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.ORG_READ_TOKEN }}
+          script: |
+            const fs = require('fs');
+
+            const org = process.env.ORG_NAME;
+            const maxRepos = parseInt(process.env.MAX_REPOS, 10);
+
+            const repos = await github.paginate(github.rest.repos.listForOrg, {
+              org,
+              type: "all",
+              per_page: 100,
+              sort: "updated",
+            });
+
+            const selected = repos.slice(0, maxRepos);
+
+            const totals = {};
+            for (const r of selected) {
+              try {
+                const { data } = await github.rest.repos.listLanguages({
+                  owner: r.owner.login,
+                  repo: r.name,
+                });
+                for (const [lang, bytes] of Object.entries(data || {})) {
+                  totals[lang] = (totals[lang] || 0) + bytes;
+                }
+              } catch {
+                continue;
+              }
+            }
+
+            const entries = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+            const sum = entries.reduce((acc, [, v]) => acc + v, 0) || 1;
+            const top = entries.slice(0, 10).map(([lang, bytes]) => ({
+              lang,
+              pct: +(bytes * 100 / sum).toFixed(1),
+            }));
+
+            const width = 800,
+                  barH = 22,
+                  gap = 10,
+                  leftPad = 140,
+                  rightPad = 40,
+                  topPad = 30;
+            const height = top.length * (barH + gap) + topPad + 10;
+            const title = `Languages (${top.map(x => `${x.lang} ${x.pct}%`).join(' • ')})`;
+
+            function esc(s) {
+              return s.replace(/[&<>"']/g, c => ({
+                '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+              }[c]));
+            }
+
+            let bars = '';
+            let y = topPad;
+            for (const row of top) {
+              const w = Math.max(2, Math.round((width - leftPad - rightPad) * row.pct / 100));
+              bars += `
+                <text x="${leftPad-8}" y="${y+barH-6}" text-anchor="end" font-size="12" fill="#e5e7eb">${esc(row.lang)}</text>
+                <rect x="${leftPad}" y="${y}" width="${w}" height="${barH}" rx="6" fill="#ef4444" />
+                <text x="${leftPad + w + 6}" y="${y+barH-6}" font-size="12" fill="#e5e7eb">${row.pct}%</text>
+              `;
+              y += barH + gap;
+            }
+
+            const svg = `
+              <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+                <style>
+                  text { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, sans-serif; }
+                </style>
+                <rect width="100%" height="100%" fill="#0b0b0d"/>
+                <text x="20" y="20" font-size="14" fill="#f3f4f6">${esc(title)}</text>
+                ${bars}
+              </svg>
+            `;
+
+            fs.writeFileSync('languages.svg', svg.trim(), 'utf8');
+
+      - name: Commit languages.svg
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update languages.svg"
+          file_pattern: languages.svg
