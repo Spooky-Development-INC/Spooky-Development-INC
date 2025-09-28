@@ -1,10 +1,34 @@
-<svg width="900" height="278" viewBox="0 0 900 278" xmlns="http://www.w3.org/2000/svg">
+<svg width="980" height="358" viewBox="0 0 980 358" xmlns="http://www.w3.org/2000/svg">
     <style>text{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,sans-serif}</style>
     <rect width="100%" height="100%" fill="#0b0b0d"/>
-    <g><rect x="14" y="14" width="872" height="250" rx="16" fill="#0f1115" stroke="#1f2430"/>
-       <text x="20" y="38" font-size="18" font-weight="700" fill="#F3F4F6">Spooky-Development-INC/Spooky-Development-INC — Latest activity</text>
-       <text x="20" y="56" font-size="12" fill="#C9D3DE">Commit: docs: texturing • @xl-spooky • 1m ago</text></g>
-    <g><circle cx="52" cy="103" r="18" fill="#ef4444"/><text x="52" y="109" text-anchor="middle" font-size="14" font-weight="700" fill="#0b0b0d">C</text><text x="84" y="108" font-size="14" fill="#E5E7EB">Commit</text><a href="https://github.com/Spooky-Development-INC/Spooky-Development-INC/commit/91a8b870aa09a850a09ee690a4f6ecfa1d79e56b" target="_blank" rel="noopener"><text x="180" y="108" font-size="13" fill="#CBD5E1">docs: texturing</text></a><text x="880" y="108" font-size="12" fill="#A3AFBF" text-anchor="end">91a8b87 • @xl-spooky • 1m ago</text></g>
-    <g><circle cx="52" cy="167" r="18" fill="#f59e0b"/><text x="52" y="173" text-anchor="middle" font-size="14" font-weight="700" fill="#0b0b0d">I</text><text x="84" y="172" font-size="14" fill="#E5E7EB">Issue</text><text x="180" y="172" font-size="13" fill="#94A3B8">None</text></g>
-    <g><circle cx="52" cy="231" r="18" fill="#3b82f6"/><text x="52" y="237" text-anchor="middle" font-size="14" font-weight="700" fill="#0b0b0d">PR</text><text x="84" y="236" font-size="14" fill="#E5E7EB">Pull Request</text><text x="180" y="236" font-size="13" fill="#94A3B8">None</text></g>
+    <g>
+      <rect x="16" y="16" width="948" height="326" rx="18" fill="#0d0f14" stroke="#1f2430"/>
+      <rect x="16" y="16" width="948" height="52" rx="18" fill="#10131a"/>
+      <text x="24" y="46" font-size="22" font-weight="800" fill="#F3F4F6">Spooky-Development-INC/Spooky-Development-INC — Latest activity</text>
+      <text x="24" y="66" font-size="14" fill="#C9D3DE">Commit: docs: More texturing for snapshot • @xl-spooky • 1m ago</text>
+    </g>
+    
+    <g>
+      <rect x="18" y="94" width="944" height="72" rx="14" fill="#0f1115" stroke="#1f2430"/>
+      <circle cx="66" cy="130" r="22" fill="#ef4444"/><text x="66" y="137" text-anchor="middle" font-size="16" font-weight="700" fill="#0b0b0d">C</text>
+      <text x="108" y="120" font-size="16" font-weight="600" fill="#E5E7EB">Commit</text>
+      <a href="https://github.com/Spooky-Development-INC/Spooky-Development-INC/commit/2e785ada0d731836a3e74bdb51b20c430f06e968" target="_blank" rel="noopener">
+        <text x="234" y="136" font-size="15" fill="#D1D5DB">docs: More texturing for snapshot</text>
+      </a>
+      <text x="956" y="136" font-size="13" fill="#A3AFBF" text-anchor="end">2e785ad • @xl-spooky • 1m ago</text>
+    </g>
+    
+    <g>
+      <rect x="18" y="178" width="944" height="72" rx="14" fill="#0f1115" stroke="#1f2430"/>
+      <circle cx="66" cy="214" r="22" fill="#f59e0b"/><text x="66" y="221" text-anchor="middle" font-size="16" font-weight="700" fill="#0b0b0d">I</text>
+      <text x="108" y="204" font-size="16" font-weight="600" fill="#E5E7EB">Issue</text>
+      <text x="234" y="220" font-size="14" fill="#94A3B8">None</text>
+    </g>
+    
+    <g>
+      <rect x="18" y="262" width="944" height="72" rx="14" fill="#0f1115" stroke="#1f2430"/>
+      <circle cx="66" cy="298" r="22" fill="#3b82f6"/><text x="66" y="305" text-anchor="middle" font-size="16" font-weight="700" fill="#0b0b0d">PR</text>
+      <text x="108" y="288" font-size="16" font-weight="600" fill="#E5E7EB">Pull Request</text>
+      <text x="234" y="304" font-size="14" fill="#94A3B8">None</text>
+    </g>
   </svg>
