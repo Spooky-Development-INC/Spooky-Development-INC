@@ -5,7 +5,7 @@
 
 ## Live Activity
 <!-- ACTIVITY:START -->
-_(Loading recent activity…)_
+_(Loading repository snapshot…)_
 <!-- ACTIVITY:END -->
 
 ## Languages & Tech
