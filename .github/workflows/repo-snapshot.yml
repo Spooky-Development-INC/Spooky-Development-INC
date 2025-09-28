@@ -1,0 +1,124 @@
+name: Update Repo Snapshot
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: read
+  pull-requests: read
+
+concurrency:
+  group: repo-snapshot
+  cancel-in-progress: true
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build snapshot markdown
+        id: build
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+
+            const esc = (s) => String(s ?? '').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+            const oneLine = (s='') => s.split('\n')[0].trim();
+            const sanitize = (s='') => {
+              const first = oneLine(s);
+              return /(token|secret|password|key|auth|bearer|cookie|apikey|jwt|refresh)/i.test(first) ? '(redacted message)' : first.slice(0,120);
+            };
+            const fmt = (iso) => {
+              if (!iso) return 'n/a';
+              const d = new Date(iso);
+              return d.toISOString().replace('T',' ').replace('Z',' UTC');
+            };
+
+            const repoInfo = await github.rest.repos.get({ owner, repo });
+            const branch = repoInfo.data.default_branch;
+
+            const commits = await github.rest.repos.listCommits({ owner, repo, sha: branch, per_page: 1 });
+            const c0 = commits.data[0];
+            const latestCommit = c0 ? {
+              type: 'Commit',
+              date: c0.commit.author?.date || c0.commit.committer?.date || null,
+              title: sanitize(c0.commit.message || ''),
+              url: c0.html_url,
+              by: c0.author?.login || c0.commit.author?.name || 'unknown',
+              extra: c0.sha.slice(0,7)
+            } : null;
+
+            const allIssues = await github.rest.issues.listForRepo({ owner, repo, state: 'all', per_page: 30, sort: 'updated', direction: 'desc' });
+            const realIssue = allIssues.data.find(x => !x.pull_request);
+            const latestIssue = realIssue ? {
+              type: 'Issue',
+              date: realIssue.updated_at,
+              title: realIssue.title,
+              url: realIssue.html_url,
+              by: realIssue.user?.login || 'unknown',
+              extra: `#${realIssue.number} • ${realIssue.state}`
+            } : null;
+
+            const prs = await github.rest.pulls.list({ owner, repo, state: 'all', per_page: 30 });
+            prs.data.sort((a,b)=> new Date(b.updated_at) - new Date(a.updated_at));
+            const pr0 = prs.data[0];
+            const latestPR = pr0 ? {
+              type: 'Pull Request',
+              date: pr0.updated_at,
+              title: pr0.title,
+              url: pr0.html_url,
+              by: pr0.user?.login || 'unknown',
+              extra: `#${pr0.number} • ${pr0.merged_at ? 'merged' : pr0.state}`
+            } : null;
+
+            const items = [latestCommit, latestIssue, latestPR].filter(Boolean);
+            const newest = items.length ? items.slice().sort((a,b)=> new Date(b.date)-new Date(a.date))[0] : null;
+
+            const row = (label, item, emoji) => {
+              if (!item) return `<tr><td>${emoji} <b>${label}</b></td><td><i>None</i></td></tr>`;
+              return `<tr>
+                        <td>${emoji} <b>${label}</b></td>
+                        <td><a href="${esc(item.url)}">${esc(item.title || label)}</a>
+                          <span> — <code>${esc(item.extra || '')}</code> by <b>@${esc(item.by)}</b> on <code>${fmt(item.date)}</code></span>
+                        </td>
+                      </tr>`;
+            };
+
+            const newestRow = newest
+              ? `<tr><td>⏱️ <b>Newest</b></td><td><b>${newest.type}</b> — <a href="${esc(newest.url)}">${esc(newest.title)}</a> <span>by <b>@${esc(newest.by)}</b> on <code>${fmt(newest.date)}</code></span></td></tr>`
+              : `<tr><td>⏱️ <b>Newest</b></td><td><i>No recent activity</i></td></tr>`;
+
+            const table = `
+              <table>
+                <tbody>
+                  ${row('Commit', latestCommit, '🧩')}
+                  ${row('Issue', latestIssue, '🐞')}
+                  ${row('Pull Request', latestPR, '🔀')}
+                  ${newestRow}
+                </tbody>
+              </table>
+            `.replace(/\n\s+/g,'\n').trim();
+
+            const md = `\n### Repo Snapshot\n${table}\n`;
+            core.setOutput('md', md);
+
+      - name: Inject into README
+        run: |
+          awk -v r="${{ steps.build.outputs.md }}" '
+            BEGIN{p=1}
+            /<!-- REPO_STATUS:START -->/ {print; print r; p=0; next}
+            /<!-- REPO_STATUS:END -->/ {p=1}
+            p {print}
+          ' README.md > README.tmp && mv README.tmp README.md
+
+      - name: Commit README
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "docs(readme): update repo snapshot"
+          file_pattern: README.md
