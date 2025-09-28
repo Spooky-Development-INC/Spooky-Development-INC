@@ -14,3 +14,6 @@ _(Loading repository snapshot…)_
 ## Contact
 - Discord: **[Join our server](#)**
 - Email: **spkydevelopment@gmail.com**
+
+## Repo Snapshot
+![Repo Snapshot](assets/repo-snapshot-63fb03151d.svg)
