@@ -20,6 +20,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync with remote
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git pull --rebase origin main
 
       - name: Build assets/languages.svg
         id: build
@@ -120,11 +129,7 @@ jobs:
         env:
           HASH: ${{ steps.build.outputs.hash }}
         run: |
-          if grep -Eq '!\[Languages Usage\]\(\./assets/languages\.svg(\?[^)]*)?\)' README.md; then
-            sed -E -i 's#!\[Languages Usage\]\(\.\/assets\/languages\.svg(\?[^)]*)?\)#![Languages Usage](./assets/languages.svg?v='"$HASH"')#' README.md
-          else
-            sed -E -i 's#!\[Languages Usage\]\(\.\/languages\.svg(\?[^)]*)?\)#![Languages Usage](./assets/languages.svg?v='"$HASH"')#' README.md || true
-          fi
+          sed -E -i 's#!\[Languages Usage\]\(\.\/assets\/languages\.svg(\?[^)]*)?\)#![Languages Usage](./assets/languages.svg?v='"$HASH"')#' README.md
 
       - name: Commit
         uses: stefanzweifel/git-auto-commit-action@v5
