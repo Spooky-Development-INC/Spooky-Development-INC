@@ -4,9 +4,9 @@
 > No code is exposed — only safe metadata like repo name, date, and sanitized titles.
 
 ## Live Activity
-<!-- ACTIVITY:START -->
-_(Loading repository snapshot…)_
-<!-- ACTIVITY:END -->
+<!-- SNAPSHOT:START -->
+_(Rendering latest activity…)_
+<!-- SNAPSHOT:END -->
 
 ## Languages & Tech
 ![Languages Usage](assets/languages-5f0501abe3.svg)
