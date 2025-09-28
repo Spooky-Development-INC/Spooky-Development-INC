@@ -63,38 +63,40 @@ jobs:
             const items = [commit, issue, pr].filter(Boolean);
             const newest = items.length ? items.slice().sort((a,b)=> new Date(b.date)-new Date(a.date))[0] : null;
 
-            const width=980, pad=24, headerH=70, rowH=72, rows=3, gap=12;
+            const updatedText = newest ? `Updated ${ago(newest.date)}` : 'No recent activity';
+
+            const width=980, pad=24, headerH=64, rowH=78, rows=3, gap=12;
             const height = headerH + rows*rowH + (rows-1)*gap + pad*2;
 
             const headTitle = `${owner}/${repo} — Latest activity`;
-            const headSub = newest ? `${newest.type}: ${first(newest.title)} • @${newest.by} • ${ago(newest.date)}` : 'No recent activity';
 
-            const labelX = pad + 84;
-            const titleX = pad + 210;
+            const labelX = pad + 92;
+            const titleX = pad + 230;
             const rightX = width - pad;
             const rowTop = i => pad + headerH + i*(rowH+gap);
             const rowMid = i => rowTop(i) + Math.floor(rowH/2);
 
-            const circ = (y, color) => `<circle cx="${pad+42}" cy="${y}" r="22" fill="${color}"/>`;
-            const glyph = (y, t) => `<text x="${pad+42}" y="${y+7}" text-anchor="middle" font-size="16" font-weight="700" fill="#0b0b0d">${t}</text>`;
+            const circ = (y, color) => `<circle cx="${pad+46}" cy="${y}" r="22" fill="${color}"/>`;
+            const glyph = (y, t) => `<text x="${pad+46}" y="${y+7}" text-anchor="middle" font-size="16" font-weight="800" fill="#0b0b0d">${t}</text>`;
+
             const row = (i, color, sym, label, it) => {
               const top = rowTop(i), mid = rowMid(i);
               if (!it) return `
                 <g>
-                  <rect x="${pad-6}" y="${top}" width="${width-2*(pad-6)}" height="${rowH}" rx="14" fill="#0f1115" stroke="#1f2430"/>
+                  <rect x="${pad-6}" y="${top}" width="${width-2*(pad-6)}" height="${rowH}" rx="16" fill="#0f1115" stroke="#1f2430"/>
                   ${circ(mid, color)}${glyph(mid, sym)}
-                  <text x="${labelX}" y="${mid-10}" font-size="16" font-weight="600" fill="#E5E7EB">${label}</text>
-                  <text x="${titleX}" y="${mid+6}" font-size="14" fill="#94A3B8">None</text>
+                  <text x="${labelX}" y="${mid-12}" font-size="18" font-weight="800" fill="#F8FAFC">${label}</text>
+                  <text x="${titleX}" y="${mid+8}" font-size="15" fill="#C8D0DA" font-style="italic">None</text>
                 </g>`;
               return `
                 <g>
-                  <rect x="${pad-6}" y="${top}" width="${width-2*(pad-6)}" height="${rowH}" rx="14" fill="#0f1115" stroke="#1f2430"/>
+                  <rect x="${pad-6}" y="${top}" width="${width-2*(pad-6)}" height="${rowH}" rx="16" fill="#0f1115" stroke="#1f2430"/>
                   ${circ(mid, color)}${glyph(mid, sym)}
-                  <text x="${labelX}" y="${mid-10}" font-size="16" font-weight="600" fill="#E5E7EB">${label}</text>
+                  <text x="${labelX}" y="${mid-12}" font-size="18" font-weight="800" fill="#F8FAFC">${label}</text>
                   <a href="${esc(it.url)}" target="_blank" rel="noopener">
-                    <text x="${titleX}" y="${mid+6}" font-size="15" fill="#D1D5DB">${esc(it.title)}</text>
+                    <text x="${titleX}" y="${mid+8}" font-size="16" fill="#E5E7EB">${esc(it.title)}</text>
                   </a>
-                  <text x="${rightX}" y="${mid+6}" font-size="13" fill="#A3AFBF" text-anchor="end">${esc(it.extra||'')} • @${esc(it.by)} • ${ago(it.date)}</text>
+                  <text x="${rightX}" y="${mid+8}" font-size="13" fill="#B6C2CF" text-anchor="end">${esc(it.extra||'')} • @${esc(it.by)} • ${ago(it.date)}</text>
                 </g>`;
             };
 
@@ -103,10 +105,10 @@ jobs:
                 <style>text{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,sans-serif}</style>
                 <rect width="100%" height="100%" fill="#0b0b0d"/>
                 <g>
-                  <rect x="${pad-8}" y="${pad-8}" width="${width-2*(pad-8)}" height="${height-2*(pad-8)}" rx="18" fill="#0d0f14" stroke="#1f2430"/>
-                  <rect x="${pad-8}" y="${pad-8}" width="${width-2*(pad-8)}" height="52" rx="18" fill="#10131a"/>
-                  <text x="${pad}" y="${pad+22}" font-size="22" font-weight="800" fill="#F3F4F6">${headTitle}</text>
-                  <text x="${pad}" y="${pad+42}" font-size="14" fill="#C9D3DE">${esc(headSub)}</text>
+                  <rect x="${pad-8}" y="${pad-8}" width="${width-2*(pad-8)}" height="${height-2*(pad-8)}" rx="20" fill="#0d0f14" stroke="#1f2430"/>
+                  <rect x="${pad-8}" y="${pad-8}" width="${width-2*(pad-8)}" height="58" rx="20" fill="#10131a"/>
+                  <text x="${pad}" y="${pad+24}" font-size="22" font-weight="900" fill="#F3F4F6">${headTitle}</text>
+                  <text x="${pad}" y="${pad+44}" font-size="14" fill="#D0D7E2">${esc(updatedText)}</text>
                 </g>
                 ${row(0,'#ef4444','C','Commit',commit)}
                 ${row(1,'#f59e0b','I','Issue',issue)}
@@ -128,5 +130,5 @@ jobs:
       - name: Commit
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "docs(readme): refresh repo snapshot (redesign)"
+          commit_message: "docs(readme): refresh repo snapshot (labels + header)"
           file_pattern: README.md assets/repo-snapshot.svg
