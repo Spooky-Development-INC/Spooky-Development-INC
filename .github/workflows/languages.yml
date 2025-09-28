@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 env:
-  ORG_NAME: SpookyDevelopmentINC   # change to your org name
+  ORG_NAME: Spooky-Development-INC
   MAX_REPOS: "50"
 
 jobs:
