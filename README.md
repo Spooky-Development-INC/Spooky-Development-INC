@@ -9,7 +9,7 @@ _(Loading repository snapshot…)_
 <!-- ACTIVITY:END -->
 
 ## Languages & Tech
-![Languages Usage](./languages.svg?v=4ca7048dfea3c3be8b0db4ae9e5bdcf6dce08521)
+![Languages Usage](assets/languages-5f0501abe3.svg)
 
 ## Contact
 - Discord: **[Join our server](#)**
@@ -17,3 +17,5 @@ _(Loading repository snapshot…)_
 
 ## Repo Snapshot
 ![Repo Snapshot](assets/repo-snapshot-63fb03151d.svg)
+
+![Languages Usage](assets/languages-5f0501abe3.svg)
