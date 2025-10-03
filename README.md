@@ -6,7 +6,7 @@
 ![Repo Snapshot](./assets/repo-snapshot.svg?v=7060180299)
 
 ## Languages & Tech
-![Languages Usage](./assets/languages.svg?v=f6261b85d0)
+![Languages Usage](./assets/languages.svg?v=b6afb4ab53)
 
 ## Contact
 - Discord: **[Join our server](https://discord.gg/XYspZgEEJb)**
