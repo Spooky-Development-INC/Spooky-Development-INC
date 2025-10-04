@@ -3,7 +3,7 @@
 > This README includes a live activity section that auto-updates from our organization (private + public repos). No code is exposed—only safe metadata like repo name, date, and sanitized titles.
 
 ## Live Activity
-![Repo Snapshot](./assets/repo-snapshot.svg?v=15b7cc7b47)
+![Repo Snapshot](./assets/repo-snapshot.svg?v=6adafc99b9)
 
 ## Languages & Tech
 ![Languages Usage](./assets/languages.svg?v=8a4e2426a0)
