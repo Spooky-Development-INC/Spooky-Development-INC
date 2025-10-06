@@ -1,77 +1,50 @@
 # 👻 Spooky Development INC
 
-Welcome to **Spooky Development INC** — a professional development group focused on creating **custom Discord bots** that combine **functionality, performance, and style**.  
-We specialize in building tailored solutions for communities, businesses, and creators who want more than just a basic bot.
+Spooky Development INC delivers custom Discord bots that combine a playful brand with serious engineering.
+
+We partner with community leaders, streamers, agencies, and companies to ship reliable automation that feels tailor-made.
 
 ---
 
-## ✨ What We Offer
-- **Custom Bot Development** → From small utility bots to full-featured systems.  
-- **Modern Back-End** → Built on the latest frameworks for performance, scalability, and security.  
-- **Interactive Features** → Sleek UIs, embeds, and commands designed for smooth user experience.  
-- **Database Integrations** → Structured data handling for reliable and persistent storage.  
-- **API Connectivity** → Seamless integration with third-party services, apps, or games.  
-- **Branding & Customization** → Tailored to fit your server’s theme and identity.  
+## What you get
+- Dedicated consultation to transform ideas into scoped features.
+- Clean, documented codebases designed for future collaborators.
+- Visual storytelling through embeds, dashboards, and interaction flows.
+- Deployment guidance plus optional long-term support.
 
----
+## Packages and typical ranges
+Pricing is always custom, but these ranges help frame the conversation.
 
-## ⚙️ Technology & Standards
-We ensure every project is built with:
-- **New generation tools** (async frameworks, ORMs, typed configs).  
-- **Maintainable code** (type-safety, logging, error handling).  
-- **Scalable architecture** for both small and large communities.  
-- **Security best practices** to protect your server and users.  
+| Package | Best fit | Includes | Typical range* |
+| --- | --- | --- | --- |
+| Kickoff | Smaller communities or a first bot | Core commands, tailored embeds, basic automations | $200 - $450 |
+| Growth | Established servers needing deeper systems | Database-backed features, role workflows, third-party integrations | $450 - $950 |
+| Scale | Agencies and brands with mission-critical needs | High availability builds, monitoring, CI/CD, ongoing support | $950+ |
 
----
+*Final quotes depend on features, integrations, and support level.*
 
-## 💼 Work Process
-1. **Consultation** → You describe your idea and requirements.  
-2. **Planning** → We discuss features, timeline, and scope.  
-3. **Development** → Our team builds your bot with clean, professional code.  
-4. **Delivery & Testing** → You get a working, stable bot ready for deployment.  
-5. **Support** → Optional long-term support & feature expansions.  
+## Add-on services
+- Web dashboards or slash command control panels
+- Analytics, logging, and alerting setup
+- Migration from legacy bots or scripts
+- Premium support retainers with SLAs
 
----
+## Timeline expectations
+- Discovery and proposal: 1 to 3 days
+- Kickoff builds: typically 3 to 7 days
+- Growth and scale builds: typically 2 to 4 weeks
+- Support retainers and feature sprints scheduled around your launch dates
 
-## ⏳ Pricing & Delivery
-We build **custom Discord bots** tailored to your needs.  
-Our pricing depends on the **complexity, features, and scale** of your project.  
+## What we need to start
+1. Share your goals, audience, and any must-have features.
+2. Provide existing assets such as branding, copy, or API docs.
+3. Approve the proposal with scope, milestones, and payment schedule.
+4. We open a shared channel for updates, demos, and acceptance testing.
 
-### 🔹 What affects the price?
-- Number of features (simple utilities vs. advanced systems)  
-- Database or hosting requirements  
-- API integrations (e.g., games, payments, external services)  
-- Design & customization (branding, UI, interactivity)  
-- Long-term support or one-time delivery  
-
-### ⏳ Delivery Times
-- Smaller bots with basic features may be delivered **within days**.  
-- Larger or advanced projects may require **weeks of development**.  
-- Delivery time is always discussed and agreed upon before we begin.  
-
-### ⚖️ Transparency
-- You’ll receive a **personal quote** based on your request.  
-- No hidden fees — everything is clearly explained upfront.  
-- If the project grows in scope, pricing and timeline can be adjusted fairly.  
-
----
-
-## 🛡️ Our Guarantee
-We guarantee:
-- A **reliable back-end** using the latest tools.  
-- **Performance and stability** under heavy usage.  
-- **Clean codebase** designed for future updates.  
-- **Professional communication** and transparent process.  
-
----
-
-## 📫 Contact
-If you’d like to commission a bot or collaborate, feel free to reach us:  
-- Discord: **[Invite Link / Contact Server](https://discord.gg/QXjMEvV2rg)**  
+## Contact
+- Discord: **[Invite Link / Contact Server](https://discord.gg/QXjMEvV2rg)**
 - Email: **spkydevelopment@gmail.com**
 
 ---
 
-## 👻 About Us
-Spooky Development INC is more than just a name — it’s a brand.  
-We blend a **spooky, playful aesthetic** with **serious development standards**, ensuring your projects are both fun and professional.  
+We are excited to craft something spooky-good for your community.
