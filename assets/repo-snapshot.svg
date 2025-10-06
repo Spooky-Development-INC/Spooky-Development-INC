@@ -11,11 +11,11 @@
       <rect x="18" y="76" width="944" height="78" rx="16" fill="#0f1115" stroke="#1f2430"/>
       <circle cx="70" cy="115" r="22" fill="#ef4444"/><text x="70" y="122" text-anchor="middle" font-size="16" font-weight="800" fill="#0b0b0d">C</text>
       <text x="116" y="103" font-size="18" font-weight="800" fill="#F8FAFC">Commit</text>
-      <a href="https://github.com/Spooky-Development-INC/Spooky-Development-INC/commit/ba0c34571b507ddb7ffd974d9c3f06e21e628e70" target="_blank" rel="noopener">
+      <a href="https://github.com/Spooky-Development-INC/Spooky-Development-INC/commit/dc047e37166fd1948ee3c7bae2e0c6db2333da20" target="_blank" rel="noopener">
         <text x="254" y="123" font-size="16" fill="#E5E7EB">(redacted)</text>
       </a>
       <text x="956" y="123" font-size="13" fill="#B6C2CF" text-anchor="end">
-        ba0c345 • @xl-spooky
+        dc047e3 • @xl-spooky
       </text>
     </g>
     
