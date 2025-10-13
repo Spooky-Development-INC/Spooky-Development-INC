@@ -2,7 +2,7 @@
     <style>text{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,sans-serif}</style>
     <rect width="100%" height="100%" fill="#0b0b0d"/>
     <text x="28" y="28" font-size="18" font-weight="700" fill="#f1f5f9">Languages usage</text>
-    <text x="28" y="50" font-size="12" fill="#9aa4b2">Analyzed 5 repositories • 5 languages</text>
+    <text x="28" y="50" font-size="12" fill="#9aa4b2">Analyzed 6 repositories • 5 languages</text>
     
     <defs><linearGradient id="gPython" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3776AB" stop-opacity="0.95"/><stop offset="1" stop-color="#3776AB" stop-opacity="0.55"/></linearGradient></defs>
     <g transform="translate(0, 70)">
