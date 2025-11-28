@@ -29,7 +29,7 @@ Custom Discord automation built for communities, creators, and brands that expec
 5. **Support**: Optional retainers keep the experience evolving.
 
 ## Tech we lean on
-![Languages Usage](./assets/languages.svg?v=5fb38fe9e2)
+![Languages Usage](./assets/languages.svg?v=4d9c1f859b)
 
 - Modern JavaScript and TypeScript stacks
 - Async frameworks that stay responsive under load
